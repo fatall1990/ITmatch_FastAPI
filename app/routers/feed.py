@@ -53,6 +53,7 @@ async def feed(
 
     return templates.TemplateResponse("feed.html", {
         "request": request,
+        "user": user,
         "users": users,
         "current_user": user,
         "filters": {

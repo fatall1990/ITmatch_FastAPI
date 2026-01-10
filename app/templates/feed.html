@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Лента - ITmatch{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Фильтры -->
+    <div class="col-md-3 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="/feed">
+                    <div class="mb-3">
+                        <label for="specialization" class="form-label">Специализация</label>
+                        <select class="form-select" id="specialization" name="specialization">
+                            <option value="">Все специализации</option>
+                            <option value="Backend" {% if filters.specialization == 'Backend' %}selected{% endif %}>Backend</option>
+                            <option value="Frontend" {% if filters.specialization == 'Frontend' %}selected{% endif %}>Frontend</option>
+                            <option value="Fullstack" {% if filters.specialization == 'Fullstack' %}selected{% endif %}>Fullstack</option>
+                            <option value="Data Science" {% if filters.specialization == 'Data Science' %}selected{% endif %}>Data Science</option>
+                            <option value="DevOps" {% if filters.specialization == 'DevOps' %}selected{% endif %}>DevOps</option>
+                            <option value="Mobile" {% if filters.specialization == 'Mobile' %}selected{% endif %}>Mobile</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="experience" class="form-label">Уровень опыта</label>
+                        <select class="form-select" id="experience" name="experience">
+                            <option value="">Все уровни</option>
+                            <option value="Junior" {% if filters.experience == 'Junior' %}selected{% endif %}>Junior</option>
+                            <option value="Middle" {% if filters.experience == 'Middle' %}selected{% endif %}>Middle</option>
+                            <option value="Senior" {% if filters.experience == 'Senior' %}selected{% endif %}>Senior</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Применить</button>
+                        <a href="/feed" class="btn btn-outline-secondary mt-2">Сбросить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Лента пользователей -->
+    <div class="col-md-9">
+        {% if users %}
+            <div class="row">
+                {% for user in users %}
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <!-- Аватар -->
+                                {% if user.avatar_url and user.avatar_url != 'default_avatar.png' %}
+                                    <img src="/static/uploads/{{ user.avatar_url }}"
+                                {% else %}
+                                    <img src="/static/default_avatar.png"
+                                {% endif %}
+                                     class="rounded-circle me-3"
+                                     width="80" height="80"
+                                     alt="{{ user.username }}"
+                                     onerror="this.src='/static/default_avatar.png'">
+                                <!-- Информация -->
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">{{ user.username }}</h5>
+                                    <div class="mb-2">
+                                        <span class="badge bg-primary">{{ user.specialization }}</span>
+                                        <span class="badge bg-info text-dark">{{ user.experience }}</span>
+                                    </div>
+                                    
+                                    {% if user.bio and user.bio|length > 100 %}
+                                        <p class="card-text small">{{ user.bio[:100] }}...</p>
+                                    {% elif user.bio %}
+                                        <p class="card-text small">{{ user.bio }}</p>
+                                    {% else %}
+                                        <p class="card-text small text-muted">Пользователь не добавил информацию о себе</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопки действий -->
+                        <div class="card-footer bg-transparent border-top-0">
+                            <div class="d-flex justify-content-between">
+                                <a href="/user/{{ user.id }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Профиль
+                                </a>
+                                <div>
+                                    <form method="post" action="/skip/{{ user.id }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm me-2">
+                                            ✖️ Пропустить
+                                        </button>
+                                    </form>
+                                    <form method="post" action="/like/{{ user.id }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            ❤️ Лайк
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Пагинация -->
+            {% if pagination.total_pages > 1 %}
+            <nav aria-label="Пагинация">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="/feed?page={{ pagination.page-1 }}{% if filters.specialization %}&specialization={{ filters.specialization }}{% endif %}{% if filters.experience %}&experience={{ filters.experience }}{% endif %}">
+                            Назад
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">{{ pagination.page }} / {{ pagination.total_pages }}</span>
+                    </li>
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="/feed?page={{ pagination.page+1 }}{% if filters.specialization %}&specialization={{ filters.specialization }}{% endif %}{% if filters.experience %}&experience={{ filters.experience }}{% endif %}">
+                            Вперед
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center py-5">
+                <h4>Пользователи не найдены</h4>
+                <p class="text-muted">Попробуйте изменить фильтры или зайдите позже.</p>
+                <a href="/feed" class="btn btn-primary">Сбросить фильтры</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}ITmatch - Найди свою IT-команду{% endblock %}
+
+{% block content %}
+<div class="row align-items-center min-vh-80">
+    <div class="col-md-6">
+        <h1 class="display-4 fw-bold mb-4">ITmatch</h1>
+        <p class="lead mb-4">Найди свою идеальную IT-команду. Общайся с разработчиками, делитесь опытом и создавайте проекты вместе.</p>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+            <a href="/register" class="btn btn-primary btn-lg px-4 me-md-2">Начать сейчас</a>
+            <a href="/login" class="btn btn-outline-secondary btn-lg px-4">Войти</a>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <img src="https://via.placeholder.com/500x300" class="img-fluid rounded shadow" alt="ITmatch">
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">👥 Найдите команду</h3>
+                <p class="card-text">Найдите разработчиков с нужными навыками для вашего проекта.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">💬 Общайтесь легко</h3>
+                <p class="card-text">Встроенный чат для удобного общения с вашей командой.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">🚀 Развивайтесь вместе</h3>
+                <p class="card-text">Делитесь опытом и создавайте впечатляющие проекты.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

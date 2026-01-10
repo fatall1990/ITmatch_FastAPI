@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Профиль {{ user.username }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Аватар -->
+                        <div class="col-md-4 text-center">
+                            {% if user.avatar_url and user.avatar_url != 'default_avatar.png' %}
+                                <img src="{{ url_for('static', path='uploads/' + user.avatar_url) }}" 
+                                     class="rounded-circle mb-3" 
+                                     width="150" height="150" 
+                                     alt="{{ user.username }}">
+                            {% else %}
+                                <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3" 
+                                     style="width: 150px; height: 150px;">
+                                    <span class="text-white display-4">{{ user.username[0]|upper }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Информация -->
+                        <div class="col-md-8">
+                            <h5>{{ user.username }}</h5>
+                            <p class="text-muted">{{ user.email }}</p>
+                            
+                            <div class="mb-3">
+                                <span class="badge bg-primary me-2">{{ user.specialization }}</span>
+                                <span class="badge bg-info text-dark">{{ user.experience }}</span>
+                            </div>
+                            
+                            <hr>
+                            
+                            <h6>О себе:</h6>
+                            <p>{{ user.bio or 'Пользователь не добавил информацию о себе' }}</p>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="/feed" class="btn btn-outline-primary">
+                                    ← Назад к ленте
+                                </a>
+                                
+                                {% if is_match %}
+                                    <a href="#" class="btn btn-success" onclick="alert('Чат скоро будет доступен!')">
+                                        💬 Написать сообщение
+                                    </a>
+                                {% else %}
+                                    <form method="post" action="/like/{{ user.id }}">
+                                        <button type="submit" class="btn btn-danger">❤️ Лайк</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    Зарегистрирован: {{ user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Неизвестно' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

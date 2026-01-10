@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Мои совпадения - ITmatch{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Мои совпадения</h4>
+            </div>
+            <div class="card-body">
+                {% if matches %}
+                    <div class="row">
+                        {% for match_info in matches %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-start">
+                                        <!-- Аватар собеседника -->
+                                        {% if match_info.other_user.avatar_url and match_info.other_user.avatar_url != 'default_avatar.png' %}
+                                            <img src="/static/uploads/{{ match_info.other_user.avatar_url }}"
+                                        {% else %}
+                                            <img src="/static/default_avatar.png"
+                                        {% endif %}
+                                             class="rounded-circle me-3"
+                                             width="80" height="80"
+                                             alt="{{ match_info.other_user.username }}"
+                                             onerror="this.src='/static/default_avatar.png'">
+                                        
+                                        <!-- Информация -->
+                                        <div class="flex-grow-1">
+                                            <h5 class="card-title mb-1">{{ match_info.other_user.username }}</h5>
+                                            <div class="mb-2">
+                                                <span class="badge bg-primary">{{ match_info.other_user.specialization }}</span>
+                                                <span class="badge bg-info text-dark">{{ match_info.other_user.experience }}</span>
+                                            </div>
+                                            
+                                            <!-- Последнее сообщение -->
+                                            {% if match_info.last_message %}
+                                            <p class="card-text small text-muted mb-1">
+                                                {% if match_info.last_message.sender_id == user.id %}
+                                                    Вы: 
+                                                {% endif %}
+                                                {{ match_info.last_message.text[:50] }}{% if match_info.last_message.text|length > 50 %}...{% endif %}
+                                            </p>
+                                            <small class="text-muted">
+                                                {{ match_info.last_message.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                            </small>
+                                            {% else %}
+                                            <p class="card-text small text-muted">Начните общение!</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Кнопки действий -->
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="/user/{{ match_info.other_user.id }}" class="btn btn-outline-primary btn-sm">
+                                            Профиль
+                                        </a>
+                                        <!-- ВРЕМЕННО: Заглушка для чата -->
+                                        <a href="#" class="btn btn-success btn-sm" onclick="alert('Чат будет реализован на следующей неделе!')">
+                                            💬 Написать
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <h4>У вас пока нет совпадений</h4>
+                        <p class="text-muted">Лайкайте пользователей в ленте, чтобы найти свою команду!</p>
+                        <a href="/feed" class="btn btn-primary">Перейти в ленту</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

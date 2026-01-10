@@ -15,6 +15,7 @@ templates = Jinja2Templates(directory="app/templates")
 # Настройки для загрузки файлов
 UPLOAD_DIR = "app/static/uploads"
 ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 @router.get("/profile", response_class=HTMLResponse)
@@ -40,6 +41,83 @@ async def view_profile(
             "matches": len(matches)
         }
     })
+
+
+@router.post("/profile/upload-avatar")
+async def upload_avatar(
+        request: Request,
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db)
+):
+    """Загрузка аватарки"""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse(url="/login")
+
+    # Проверяем размер файла
+    file.file.seek(0, 2)  # Перемещаемся в конец файла
+    file_size = file.file.tell()
+    file.file.seek(0)  # Возвращаемся в начало
+
+    if file_size > MAX_FILE_SIZE:
+        return templates.TemplateResponse("edit_profile.html", {
+            "request": request,
+            "user": user,
+            "error": "Файл слишком большой. Максимальный размер: 5MB"
+        })
+
+    # Проверяем расширение файла
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        return templates.TemplateResponse("edit_profile.html", {
+            "request": request,
+            "user": user,
+            "error": "Недопустимый формат файла. Разрешены: .png, .jpg, .jpeg, .gif"
+        })
+
+    # Удаляем старую аватарку если она не дефолтная
+    if user.avatar_url and user.avatar_url != "default_avatar.png":
+        old_avatar_path = os.path.join(UPLOAD_DIR, user.avatar_url)
+        if os.path.exists(old_avatar_path):
+            os.remove(old_avatar_path)
+
+    # Создаём уникальное имя файла
+    import uuid
+    filename = f"{uuid.uuid4()}{file_ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    # Сохраняем файл
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Обновляем профиль пользователя
+    update_data = {"avatar_url": filename}
+    crud.update_user_profile(db, user.id, update_data)
+
+    return RedirectResponse(url="/profile", status_code=status.HTTP_302_FOUND)
+
+
+@router.post("/profile/remove-avatar")
+async def remove_avatar(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    """Удаление аватарки (возврат к дефолтной)"""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse(url="/login")
+
+    # Удаляем файл аватарки если она не дефолтная
+    if user.avatar_url and user.avatar_url != "default_avatar.png":
+        avatar_path = os.path.join(UPLOAD_DIR, user.avatar_url)
+        if os.path.exists(avatar_path):
+            os.remove(avatar_path)
+
+    # Устанавливаем дефолтную аватарку
+    update_data = {"avatar_url": "default_avatar.png"}
+    crud.update_user_profile(db, user.id, update_data)
+
+    return RedirectResponse(url="/profile", status_code=status.HTTP_302_FOUND)
 
 
 @router.get("/profile/edit", response_class=HTMLResponse)
@@ -117,7 +195,15 @@ async def upload_avatar(
 
     # Обновляем профиль пользователя
     update_data = {"avatar_url": filename}
-    crud.users.update_user_profile(db, user.id, update_data)
+    from sqlalchemy import update
+    from app.models import User
+
+    stmt = update(User).where(User.id == user.id).values(avatar_url=filename)
+    db.execute(stmt)
+    db.commit()
+
+    # Обновляем объект пользователя
+    db.refresh(user)
 
     return RedirectResponse(url="/profile", status_code=status.HTTP_302_FOUND)
 

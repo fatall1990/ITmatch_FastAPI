@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow">
+            <div class="card-body text-center">
+                <!-- Аватар -->
+                {% if user.avatar_url and user.avatar_url != 'default_avatar.png' %}
+                    <img src="/static/uploads/{{ user.avatar_url }}"
+                {% else %}
+                    <img src="/static/default_avatar.png"
+                {% endif %}
+                         class="rounded-circle mb-3"
+                         width="150" height="150"
+                         alt="{{ user.username }}"
+                         onerror="this.src='/static/default_avatar.png'">
+
+                <h4>{{ user.username }}</h4>
+                <p class="text-muted">{{ user.email }}</p>
+
+                <div class="mb-3">
+                    <span class="badge bg-primary">{{ user.specialization }}</span>
+                    <span class="badge bg-info text-dark">{{ user.experience }}</span>
+                </div>
+
+                <a href="/profile/edit" class="btn btn-outline-primary btn-sm">
+                    ✏️ Редактировать профиль
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">Статистика</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="display-6">{{ stats.sent_likes }}</div>
+                        <small class="text-muted">Отправлено лайков</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="display-6">{{ stats.received_likes }}</div>
+                        <small class="text-muted">Получено лайков</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="display-6">{{ stats.matches }}</div>
+                        <small class="text-muted">Совпадений</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">О себе</h5>
+            </div>
+            <div class="card-body">
+                {% if user.bio %}
+                    <p>{{ user.bio }}</p>
+                {% else %}
+                    <p class="text-muted">Расскажите о себе в настройках профиля!</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="/feed" class="btn btn-primary w-100">
+                            🔍 Найти команду
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="/matches" class="btn btn-success w-100">
+                            👥 Мои совпадения
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

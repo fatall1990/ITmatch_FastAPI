@@ -4,7 +4,7 @@ from .. import models, schemas
 from passlib.context import CryptContext
 
 # Инициализируем контекст для хэширования паролей
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt", "django_pbkdf2_sha256"], deprecated="auto")
 
 def get_user_by_email(db: Session, email: str):
     """Получить пользователя по email"""
@@ -16,7 +16,7 @@ def get_user_by_id(db: Session, user_id: int):
 
 def create_user(db: Session, user: schemas.UserCreate):
     """Создать нового пользователя"""
-    hashed_password = pbkdf2_sha256.hash(user.password)
+    hashed_password = pwd_context.hash(user.password, scheme="pbkdf2_sha256")
     db_user = models.User(
         email=user.email,
         username=user.username,
