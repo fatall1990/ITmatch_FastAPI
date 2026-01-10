@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - ITmatch{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Регистрация в ITmatch</h4>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Имя/никнейм</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="specialization" class="form-label">Специализация</label>
+                        <select class="form-select" id="specialization" name="specialization" required>
+                            <option value="">Выберите специализацию</option>
+                            <option value="Backend">Backend-разработчик</option>
+                            <option value="Frontend">Frontend-разработчик</option>
+                            <option value="Fullstack">Fullstack-разработчик</option>
+                            <option value="Data Science">Data Scientist</option>
+                            <option value="DevOps">DevOps инженер</option>
+                            <option value="Mobile">Мобильный разработчик</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="experience" class="form-label">Уровень опыта</label>
+                        <select class="form-select" id="experience" name="experience" required>
+                            <option value="">Выберите уровень</option>
+                            <option value="Junior">Junior</option>
+                            <option value="Middle">Middle</option>
+                            <option value="Senior">Senior</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">О себе</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <a href="/login">Уже есть аккаунт? Войдите</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
