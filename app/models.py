@@ -17,6 +17,7 @@ class User(Base):
     avatar_url = Column(String, default="default_avatar.png")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_admin = Column(Boolean, default=False)
 
     # Связи с другими таблицами
     sent_likes = relationship("Like", foreign_keys="Like.from_user_id", back_populates="from_user")
