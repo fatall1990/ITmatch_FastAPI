@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from .database import engine, Base, get_db
-from .routers import auth, profiles, feed
+from .routers import auth, profiles, feed, messages
 from .admin import setup_admin
 import os
 from pathlib import Path
@@ -160,6 +160,7 @@ async def test_debug():
 app.include_router(auth.router, tags=["auth"])
 app.include_router(profiles.router, tags=["profiles"])
 app.include_router(feed.router, tags=["feed"])
+app.include_router(messages.router, tags=["messages"])
 
 # Настраиваем админ-панель
 admin = setup_admin(app)

@@ -69,13 +69,40 @@ def get_user_matches(db: Session, user_id: int):
     return matches
 
 
-def get_match_by_users(db: Session, user1_id: int, user2_id: int):
-    """Получить матч между двумя пользователями"""
-    match = db.query(models.Match).filter(
-        or_(
-            and_(models.Match.user1_id == user1_id, models.Match.user2_id == user2_id),
-            and_(models.Match.user1_id == user2_id, models.Match.user2_id == user1_id)
-        )
-    ).first()
+def get_match_by_users(db: Session, user1_id: int, user2_id: int = None, match_id: int = None):
+    """
+    Получить матч между двумя пользователями или по ID матча
 
-    return match
+    Args:
+        user1_id: ID первого пользователя
+        user2_id: ID второго пользователя (опционально)
+        match_id: ID матча (опционально)
+    """
+    if match_id:
+        # Ищем матч по ID и проверяем, что пользователь в нём участвует
+        match = db.query(models.Match).filter(
+            models.Match.id == match_id,
+            or_(
+                models.Match.user1_id == user1_id,
+                models.Match.user2_id == user1_id
+            )
+        ).first()
+        return match
+    elif user2_id:
+        # Ищем матч между двумя пользователями
+        match = db.query(models.Match).filter(
+            or_(
+                and_(models.Match.user1_id == user1_id, models.Match.user2_id == user2_id),
+                and_(models.Match.user1_id == user2_id, models.Match.user2_id == user1_id)
+            )
+        ).first()
+        return match
+    else:
+        # Ищем все матчи пользователя
+        matches = db.query(models.Match).filter(
+            or_(
+                models.Match.user1_id == user1_id,
+                models.Match.user2_id == user1_id
+            )
+        ).all()
+        return matches

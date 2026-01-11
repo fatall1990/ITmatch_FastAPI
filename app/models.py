@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, T
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
+from sqlalchemy import and_, or_
 
 
 class User(Base):
