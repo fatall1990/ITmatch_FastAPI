@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Статистика - ITmatch Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 20px; }
+        .stat-card { transition: transform 0.2s; border-radius: 10px; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .stat-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .stat-number { font-size: 2.2rem; font-weight: bold; }
+        .stat-label { color: #6c757d; font-size: 0.9rem; }
+        .stat-change { font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Заголовок -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Статистика ITmatch
+                    </h1>
+                    <a href="/admin" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-1"></i>Назад в админку
+                    </a>
+                </div>
+                <p class="text-muted">Общая статистика платформы</p>
+            </div>
+        </div>
+
+        <!-- Основные метрики -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card border-primary">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-people-fill stat-icon text-primary"></i>
+                        <div class="stat-number">{{ total_users }}</div>
+                        <div class="stat-label">Всего пользователей</div>
+                        {% if new_users_week > 0 %}
+                        <div class="stat-change text-success">
+                            <i class="bi bi-arrow-up"></i> +{{ new_users_week }} за неделю
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card border-success">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-heart-fill stat-icon text-success"></i>
+                        <div class="stat-number">{{ total_likes }}</div>
+                        <div class="stat-label">Всего лайков</div>
+                        {% if new_likes_week > 0 %}
+                        <div class="stat-change text-success">
+                            <i class="bi bi-arrow-up"></i> +{{ new_likes_week }} за неделю
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card border-info">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-people stat-icon text-info"></i>
+                        <div class="stat-number">{{ total_matches }}</div>
+                        <div class="stat-label">Всего совпадений</div>
+                        {% if new_matches_week > 0 %}
+                        <div class="stat-change text-success">
+                            <i class="bi bi-arrow-up"></i> +{{ new_matches_week }} за неделю
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card border-warning">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-chat-dots-fill stat-icon text-warning"></i>
+                        <div class="stat-number">{{ total_messages }}</div>
+                        <div class="stat-label">Всего сообщений</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дополнительная статистика -->
+        <div class="row">
+            <!-- Статистика пользователей -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Статистика пользователей</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <tbody>
+                                    <tr>
+                                        <td><i class="bi bi-person-check text-success me-2"></i>Активные пользователи</td>
+                                        <td class="text-end"><span class="badge bg-success rounded-pill p-2">{{ active_users }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-shield-check text-primary me-2"></i>Администраторы</td>
+                                        <td class="text-end"><span class="badge bg-primary rounded-pill p-2">{{ admin_users }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-people text-info me-2"></i>Всего пользователей</td>
+                                        <td class="text-end"><span class="badge bg-info rounded-pill p-2">{{ total_users }}</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Специализации -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Распределение по специализациям</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if specializations %}
+                            <ul class="list-group list-group-flush">
+                                {% for spec, count in specializations %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ spec }}</span>
+                                    <span class="badge bg-success rounded-pill">{{ count }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-pie-chart display-4 text-muted"></i>
+                                <p class="text-muted mt-2">Нет данных о специализациях</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Уровень опыта -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Распределение по опыту</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if experiences %}
+                            <ul class="list-group list-group-flush">
+                                {% for exp, count in experiences %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ exp }}</span>
+                                    <span class="badge bg-info rounded-pill">{{ count }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-bar-chart display-4 text-muted"></i>
+                                <p class="text-muted mt-2">Нет данных об опыте</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Информация -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Информация о статистике</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Важно:</strong> Статистика обновляется в реальном времени
+                        </div>
+
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-calendar-week text-primary me-2"></i>
+                                <small class="text-muted">Статистика за неделю: последние 7 дней</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-clock text-primary me-2"></i>
+                                <small class="text-muted">Данные актуальны на момент загрузки страницы</small>
+                            </li>
+                            <li>
+                                <i class="bi bi-database text-primary me-2"></i>
+                                <small class="text-muted">Источник данных: база данных SQLite</small>
+                            </li>
+                        </ul>
+
+                        <div class="mt-4">
+                            <a href="/admin" class="btn btn-primary w-100">
+                                <i class="bi bi-arrow-left me-1"></i>Вернуться в админ-панель
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Футер -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="text-center text-muted small">
+                    <hr>
+                    <p>
+                        <i class="bi bi-cpu"></i> ITmatch Admin Panel •
+                        <i class="bi bi-clock-history"></i> Обновлено: {{ now().strftime('%d.%m.%Y %H:%M') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Автоматическое обновление страницы каждые 5 минут
+        setTimeout(function() {
+            window.location.reload();
+        }, 300000); // 5 минут = 300000 миллисекунд
+    </script>
+</body>
+</html>
