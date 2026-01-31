@@ -36,12 +36,19 @@
                     </div>
                     
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Применить</button>
-                        <a href="/feed" class="btn btn-outline-secondary mt-2">Сбросить</a>
-                    </div>
-                </form>
+                <button type="submit" class="btn btn-primary">Применить</button>
+                <div class="mt-2">
+                    <a href="/feed" class="btn btn-outline-secondary btn-sm w-100 mb-1">
+                        Сбросить фильтры
+                    </a>
+                    <a href="/feed/reset" class="btn btn-outline-warning btn-sm w-100">
+                        Сбросить пропущенных
+                    </a>
+                </div>
             </div>
-        </div>
+        </form>
+    </div>
+</div>
     </div>
     
     <!-- Лента пользователей -->
@@ -89,12 +96,33 @@
                                     <i class="bi bi-eye"></i> Профиль
                                 </a>
                                 <div>
+                                    <!-- Форма пропуска -->
                                     <form method="post" action="/skip/{{ user.id }}" class="d-inline">
+                                        {% if filters.specialization %}
+                                        <input type="hidden" name="specialization" value="{{ filters.specialization }}">
+                                        {% endif %}
+                                        {% if filters.experience %}
+                                        <input type="hidden" name="experience" value="{{ filters.experience }}">
+                                        {% endif %}
+                                        {% if pagination.page and pagination.page > 1 %}
+                                        <input type="hidden" name="page" value="{{ pagination.page }}">
+                                        {% endif %}
                                         <button type="submit" class="btn btn-outline-secondary btn-sm me-2">
                                             ✖️ Пропустить
                                         </button>
                                     </form>
+
+                                    <!-- Форма лайка -->
                                     <form method="post" action="/like/{{ user.id }}" class="d-inline">
+                                        {% if filters.specialization %}
+                                        <input type="hidden" name="specialization" value="{{ filters.specialization }}">
+                                        {% endif %}
+                                        {% if filters.experience %}
+                                        <input type="hidden" name="experience" value="{{ filters.experience }}">
+                                        {% endif %}
+                                        {% if pagination.page and pagination.page > 1 %}
+                                        <input type="hidden" name="page" value="{{ pagination.page }}">
+                                        {% endif %}
                                         <button type="submit" class="btn btn-outline-danger btn-sm">
                                             ❤️ Лайк
                                         </button>

@@ -1,6 +1,8 @@
 from sqladmin import Admin, ModelView, BaseView, expose
 from sqladmin.authentication import AuthenticationBackend
 from fastapi import Request
+from sqlalchemy import func
+from datetime import datetime, timedelta
 from .database import engine, SessionLocal
 from .models import User, Like, Match, Message
 from passlib.context import CryptContext
@@ -195,12 +197,17 @@ class StatsView(BaseView):
     name = "📊 Статистика"
     icon = "fa-solid fa-chart-bar"
 
-    @expose("/stats", methods=["GET"])
-    def stats_page(self, request: Request):
-        """Страница со статистикой"""
-        from sqlalchemy import func
-        from datetime import datetime, timedelta
+    def is_visible(self, request: Request) -> bool:
+        """Показывать только администраторам"""
+        return request.session.get("admin", False)
 
+    def is_accessible(self, request: Request) -> bool:
+        """Доступ только администраторам"""
+        return request.session.get("admin", False)
+
+    @expose("/stats", methods=["GET"])
+    async def stats_page(self, request: Request):
+        """Страница со статистикой"""
         db = SessionLocal()
 
         try:
@@ -244,28 +251,217 @@ class StatsView(BaseView):
             specializations_list = [(s[0], s[1]) for s in specializations]
             experiences_list = [(e[0], e[1]) for e in experiences]
 
-            context = {
-                "request": request,
-                "total_users": total_users,
-                "active_users": active_users,
-                "admin_users": admin_users,
-                "total_likes": total_likes,
-                "total_matches": total_matches,
-                "total_messages": total_messages,
-                "new_users_week": new_users_week,
-                "new_likes_week": new_likes_week,
-                "new_matches_week": new_matches_week,
-                "specializations": specializations_list,
-                "experiences": experiences_list,
-            }
-
-            return self.templates.TemplateResponse(
-                "admin/stats.html",
-                context
+            # Создаем простой шаблон для статистики
+            html_content = self._generate_stats_html(
+                total_users=total_users,
+                active_users=active_users,
+                admin_users=admin_users,
+                total_likes=total_likes,
+                total_matches=total_matches,
+                total_messages=total_messages,
+                new_users_week=new_users_week,
+                new_likes_week=new_likes_week,
+                new_matches_week=new_matches_week,
+                specializations=specializations_list,
+                experiences=experiences_list
             )
+
+            from fastapi.responses import HTMLResponse
+            return HTMLResponse(content=html_content)
 
         finally:
             db.close()
+
+    def _generate_stats_html(self, **kwargs):
+        """Генерирует HTML для страницы статистики"""
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Статистика - ITmatch Admin</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+            <style>
+                body {{ padding: 20px; background-color: #f8f9fa; }}
+                .stat-card {{ transition: transform 0.2s; border-radius: 10px; }}
+                .stat-card:hover {{ transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }}
+                .stat-icon {{ font-size: 2.5rem; margin-bottom: 10px; }}
+                .stat-number {{ font-size: 2.2rem; font-weight: bold; }}
+                .stat-label {{ color: #6c757d; font-size: 0.9rem; }}
+            </style>
+        </head>
+        <body>
+            <div class="container-fluid">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h1><i class="bi bi-graph-up me-2"></i>Статистика ITmatch</h1>
+                        <p class="text-muted">Общая статистика платформы</p>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card stat-card border-primary">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-people-fill stat-icon text-primary"></i>
+                                <div class="stat-number">{kwargs['total_users']}</div>
+                                <div class="stat-label">Всего пользователей</div>
+                                <div class="stat-change text-success">
+                                    <small>+{kwargs['new_users_week']} за неделю</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card stat-card border-success">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-heart-fill stat-icon text-success"></i>
+                                <div class="stat-number">{kwargs['total_likes']}</div>
+                                <div class="stat-label">Всего лайков</div>
+                                <div class="stat-change text-success">
+                                    <small>+{kwargs['new_likes_week']} за неделю</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card stat-card border-info">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-people stat-icon text-info"></i>
+                                <div class="stat-number">{kwargs['total_matches']}</div>
+                                <div class="stat-label">Всего совпадений</div>
+                                <div class="stat-change text-success">
+                                    <small>+{kwargs['new_matches_week']} за неделю</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="card stat-card border-warning">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-chat-dots-fill stat-icon text-warning"></i>
+                                <div class="stat-number">{kwargs['total_messages']}</div>
+                                <div class="stat-label">Всего сообщений</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Статистика пользователей</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td>Активные пользователи</td>
+                                        <td class="text-end"><span class="badge bg-success">{kwargs['active_users']}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Администраторы</td>
+                                        <td class="text-end"><span class="badge bg-primary">{kwargs['admin_users']}</span></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Распределение по специализациям</h5>
+                            </div>
+                            <div class="card-body">
+        """
+
+        if kwargs['specializations']:
+            html += '<ul class="list-group list-group-flush">'
+            for spec, count in kwargs['specializations']:
+                html += f'''
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{spec}</span>
+                    <span class="badge bg-secondary">{count}</span>
+                </li>
+                '''
+            html += '</ul>'
+        else:
+            html += '<p class="text-muted">Нет данных</p>'
+
+        html += '''
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Распределение по опыту</h5>
+                            </div>
+                            <div class="card-body">
+        '''
+
+        if kwargs['experiences']:
+            html += '<ul class="list-group list-group-flush">'
+            for exp, count in kwargs['experiences']:
+                html += f'''
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{exp}</span>
+                    <span class="badge bg-info">{count}</span>
+                </li>
+                '''
+            html += '</ul>'
+        else:
+            html += '<p class="text-muted">Нет данных</p>'
+
+        html += f'''
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Информация</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-muted">
+                                    <i class="bi bi-clock"></i> Данные обновляются в реальном времени
+                                </p>
+                                <p class="small text-muted">
+                                    <i class="bi bi-calendar-week"></i> Статистика за неделю: последние 7 дней
+                                </p>
+                                <a href="/admin" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-arrow-left"></i> Назад в админку
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="text-center text-muted small">
+                            <hr>
+                            <p>
+                                <i class="bi bi-cpu"></i> ITmatch Admin Panel • 
+                                <i class="bi bi-clock-history"></i> Обновлено: {datetime.now().strftime("%d.%m.%Y %H:%M")}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        </body>
+        </html>
+        '''
+
+        return html
 
 
 # Обновляем функцию setup_admin

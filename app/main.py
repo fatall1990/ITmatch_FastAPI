@@ -26,6 +26,9 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ITmatch", version="1.0.0")
 
+# Подключаем шаблоны
+templates = Jinja2Templates(directory="app/templates")
+
 from fastapi import Request
 import time
 
@@ -54,12 +57,27 @@ async def log_requests(request: Request, call_next):
 
     return response
 
+
+async def sync_session_with_cookies(request: Request, call_next):
+    """Синхронизирует сессию с cookies"""
+    # Копируем user_id из cookies в сессию, если его там нет
+    if "user_id" not in request.session:
+        user_id = request.cookies.get("user_id")
+        if user_id:
+            request.session["user_id"] = user_id
+
+    response = await call_next(request)
+    return response
+
+
 # ВАЖНО: SessionMiddleware должен быть ПЕРВЫМ
 app.add_middleware(
     SessionMiddleware,
     secret_key="your-secret-key-here-change-in-production",
     session_cookie="session",
-    max_age=3600
+    max_age=3600 * 24,  # 24 часа
+    same_site="lax",
+    https_only=False  # Для разработки
 )
 
 app.add_middleware(
@@ -107,9 +125,6 @@ create_default_avatar_if_needed()
 
 # Подключаем статические файлы
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-# Подключаем шаблоны
-templates = Jinja2Templates(directory="app/templates")
 
 # ДЕБАГ РОУТЫ - ДОБАВЬТЕ ЭТО ПЕРЕД КОРНЕВЫМ РОУТОМ
 @app.get("/debug/admin-session")

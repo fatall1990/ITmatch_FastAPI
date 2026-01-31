@@ -164,48 +164,48 @@ async def update_profile(
     return RedirectResponse(url="/profile", status_code=status.HTTP_302_FOUND)
 
 
-@router.post("/profile/upload-avatar")
-async def upload_avatar(
-        request: Request,
-        file: UploadFile = File(...),
-        db: Session = Depends(get_db)
-):
-    """Загрузка аватарки"""
-    user = get_current_user(request, db)
-    if not user:
-        return RedirectResponse(url="/login")
-
-    # Проверяем расширение файла
-    file_ext = os.path.splitext(file.filename)[1].lower()
-    if file_ext not in ALLOWED_EXTENSIONS:
-        return templates.TemplateResponse("edit_profile.html", {
-            "request": request,
-            "user": user,
-            "error": "Недопустимый формат файла. Разрешены: .png, .jpg, .jpeg, .gif"
-        })
-
-    # Создаём уникальное имя файла
-    import uuid
-    filename = f"{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-
-    # Сохраняем файл
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Обновляем профиль пользователя
-    update_data = {"avatar_url": filename}
-    from sqlalchemy import update
-    from app.models import User
-
-    stmt = update(User).where(User.id == user.id).values(avatar_url=filename)
-    db.execute(stmt)
-    db.commit()
-
-    # Обновляем объект пользователя
-    db.refresh(user)
-
-    return RedirectResponse(url="/profile", status_code=status.HTTP_302_FOUND)
+# @router.post("/profile/upload-avatar")
+# async def upload_avatar(
+#         request: Request,
+#         file: UploadFile = File(...),
+#         db: Session = Depends(get_db)
+# ):
+#     """Загрузка аватарки"""
+#     user = get_current_user(request, db)
+#     if not user:
+#         return RedirectResponse(url="/login")
+#
+#     # Проверяем расширение файла
+#     file_ext = os.path.splitext(file.filename)[1].lower()
+#     if file_ext not in ALLOWED_EXTENSIONS:
+#         return templates.TemplateResponse("edit_profile.html", {
+#             "request": request,
+#             "user": user,
+#             "error": "Недопустимый формат файла. Разрешены: .png, .jpg, .jpeg, .gif"
+#         })
+#
+#     # Создаём уникальное имя файла
+#     import uuid
+#     filename = f"{uuid.uuid4()}{file_ext}"
+#     file_path = os.path.join(UPLOAD_DIR, filename)
+#
+#     # Сохраняем файл
+#     with open(file_path, "wb") as buffer:
+#         shutil.copyfileobj(file.file, buffer)
+#
+#     # Обновляем профиль пользователя
+#     update_data = {"avatar_url": filename}
+#     from sqlalchemy import update
+#     from app.models import User
+#
+#     stmt = update(User).where(User.id == user.id).values(avatar_url=filename)
+#     db.execute(stmt)
+#     db.commit()
+#
+#     # Обновляем объект пользователя
+#     db.refresh(user)
+#
+#     return RedirectResponse(url="/profile", status_code=status.HTTP_302_FOUND)
 
 
 @router.get("/user/{user_id}")

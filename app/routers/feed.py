@@ -31,11 +31,15 @@ async def feed(
     # Получаем ID пользователей, которых уже лайкнул текущий пользователь
     liked_user_ids = [like.to_user_id for like in user.sent_likes]
 
+    # Получаем ID пользователей, которых пропустили
+    skipped_users = request.session.get("skipped_users", [])
+
     # Строим базовый запрос
     query = db.query(models.User).filter(
         models.User.id != user.id,
         models.User.is_active == True,
-        not_(models.User.id.in_(liked_user_ids))
+        not_(models.User.id.in_(liked_user_ids)),
+        not_(models.User.id.in_(skipped_users))  # <-- ИСКЛЮЧАЕМ ПРОПУЩЕННЫХ
     )
 
     # Применяем фильтры
@@ -53,9 +57,8 @@ async def feed(
 
     return templates.TemplateResponse("feed.html", {
         "request": request,
-        "user": user,
         "users": users,
-        "current_user": user,
+        "user": user,
         "filters": {
             "specialization": specialization,
             "experience": experience
@@ -75,26 +78,79 @@ async def like_user(
         request: Request,
         db: Session = Depends(get_db)
 ):
-    """Лайк пользователя"""
+    """Лайк пользователя с сохранением фильтров"""
     current_user = get_current_user(request, db)
     if not current_user:
         return RedirectResponse(url="/login")
 
     if current_user.id == user_id:
-        return RedirectResponse(url="/feed", status_code=400)
+        # Получаем параметры из запроса
+        form_data = {}
+        try:
+            form = await request.form()
+            form_data = dict(form)
+        except:
+            pass
+
+        specialization = form_data.get("specialization", "")
+        experience = form_data.get("experience", "")
+        page = form_data.get("page", "1")
+
+        try:
+            page = int(page)
+        except:
+            page = 1
+
+        return build_redirect_url("/feed", specialization, experience, page)
 
     # Создаём лайк
     like, is_match = crud.likes.create_like(db, current_user.id, user_id)
 
+    # Получаем параметры из запроса
+    form_data = {}
+    try:
+        form = await request.form()
+        form_data = dict(form)
+    except:
+        pass
+
+    specialization = form_data.get("specialization", "")
+    experience = form_data.get("experience", "")
+    page = form_data.get("page", "1")
+
+    try:
+        page = int(page)
+    except:
+        page = 1
+
     if like:
         if is_match:
-            # Перенаправляем на страницу сообщений при совпадении
+            # Перенаправляем на страницу совпадений при взаимном лайке
             return RedirectResponse(url="/matches", status_code=303)
         else:
-            # Возвращаем на ленту
-            return RedirectResponse(url="/feed", status_code=303)
+            # Возвращаем на ленту с сохранением фильтров
+            return build_redirect_url("/feed", specialization, experience, page)
     else:
-        return RedirectResponse(url="/feed", status_code=400)
+        return build_redirect_url("/feed", specialization, experience, page)
+
+
+def build_redirect_url(base_url, specialization, experience, page):
+    """Построить URL с параметрами фильтров (игнорирует None и пустые значения)"""
+    params = []
+
+    if specialization and specialization != "None" and specialization.strip():
+        params.append(f"specialization={specialization}")
+
+    if experience and experience != "None" and experience.strip():
+        params.append(f"experience={experience}")
+
+    if page and page > 1:
+        params.append(f"page={page}")
+
+    if params:
+        return RedirectResponse(url=f"{base_url}?{'&'.join(params)}", status_code=303)
+    else:
+        return RedirectResponse(url=base_url, status_code=303)
 
 
 @router.post("/skip/{user_id}")
@@ -103,13 +159,36 @@ async def skip_user(
         request: Request,
         db: Session = Depends(get_db)
 ):
-    """Пропустить пользователя (просто возвращаем на ленту)"""
+    """Пропустить пользователя и сохранить в сессии"""
     current_user = get_current_user(request, db)
     if not current_user:
         return RedirectResponse(url="/login")
 
-    # Здесь можно добавить логику для сохранения пропущенных пользователей
-    return RedirectResponse(url="/feed", status_code=303)
+    # Получаем параметры из запроса
+    form_data = {}
+    try:
+        form = await request.form()
+        form_data = dict(form)
+    except:
+        pass
+
+    specialization = form_data.get("specialization", "")
+    experience = form_data.get("experience", "")
+    page = form_data.get("page", "1")
+
+    try:
+        page = int(page)
+    except:
+        page = 1
+
+    # Сохраняем пропущенного пользователя в сессии
+    skipped_users = request.session.get("skipped_users", [])
+    if user_id not in skipped_users:
+        skipped_users.append(user_id)
+        request.session["skipped_users"] = skipped_users
+
+    # Возвращаем с сохранением фильтров
+    return build_redirect_url("/feed", specialization, experience, page)
 
 
 @router.get("/matches", response_class=HTMLResponse)
@@ -146,3 +225,20 @@ async def view_matches(
         "user": user,
         "matches": matches_info
     })
+
+
+@router.get("/feed/reset")
+async def reset_skipped(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    """Очистить список пропущенных пользователей"""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse(url="/login")
+
+    # Очищаем пропущенных пользователей из сессии
+    if "skipped_users" in request.session:
+        del request.session["skipped_users"]
+
+    return RedirectResponse(url="/feed", status_code=303)

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
 from ..database import get_db
 from .. import crud
 from ..routers.auth import get_current_user
@@ -10,7 +11,13 @@ from typing import List, Optional
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/messages", response_class=HTMLResponse)
+# Главная страница сообщений - редирект на список чатов
+@router.get("/messages")
+async def messages_main(request: Request):
+    """Главная страница сообщений - редирект на список чатов"""
+    return RedirectResponse(url="/messages/list")
+
+@router.get("/messages/list", response_class=HTMLResponse)
 async def messages_list(
         request: Request,
         db: Session = Depends(get_db)

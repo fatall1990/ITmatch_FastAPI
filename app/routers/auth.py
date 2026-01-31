@@ -77,25 +77,42 @@ async def login_user(
             "error": "Пользователь заблокирован"
         })
 
-    # Успешный вход - создаём сессию
+    # Успешный вход - создаём сессию И cookies
     response = RedirectResponse(url="/profile", status_code=status.HTTP_302_FOUND)
-    # Используем простую сессию через cookies (для упрощения)
-    response.set_cookie(key="user_id", value=str(user.id))
+
+    # Устанавливаем и в сессию, и в cookies
+    request.session["user_id"] = str(user.id)
+    response.set_cookie(key="user_id", value=str(user.id), max_age=3600 * 24)
+
     return response
 
 
 @router.get("/logout")
-async def logout():
+async def logout(request: Request):
     """Выход из системы"""
+    # Очищаем сессию
+    request.session.clear()
+
+    # Очищаем cookies
     response = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     response.delete_cookie(key="user_id")
+
     return response
 
 
 # Зависимость для получения текущего пользователя
 def get_current_user(request: Request, db: Session = Depends(get_db)):
     """Получить текущего пользователя из сессии"""
-    user_id = request.cookies.get("user_id")
+    user_id = request.session.get("user_id")
     if not user_id:
-        return None
-    return crud.get_user_by_id(db, int(user_id))
+        # Также проверяем cookies на случай, если сессия не работает
+        user_id = request.cookies.get("user_id")
+
+    if user_id:
+        try:
+            user = crud.users.get_user_by_id(db, int(user_id))
+            if user and user.is_active:
+                return user
+        except:
+            pass
+    return None
